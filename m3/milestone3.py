@@ -70,9 +70,9 @@ for index, row in data.iterrows():
     if current_value != prev_value:
         total_turns+=1
         if current_value > prev_value:
-            print(f"A 90 degree turn counterclockwise was made")
+            print(f"A 90 degree turn counterclockwise was made at timestamp: {row['timestamp']}")
         else:
-            print(f"A 90 degree turn clockwise was made")
+            print(f"A 90 degree turn clockwise was made at timestamp: {row['timestamp']}")
         plt.axvline(x=index, color='r', linestyle='--', label='Change' if not legend_added else '')
         prev_value = current_value
         legend_added = True
