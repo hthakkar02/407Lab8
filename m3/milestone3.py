@@ -3,56 +3,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 # read in cols
-columns_to_use = ['timestamp', 'accel_x', 'accel_y', 'accel_z', 'gyro_x', 'gyro_y', 'gyro_z', 'mag_x', 'mag_y', 'mag_z']
+columns_to_use = ['timestamp', 'gyro_x', 'gyro_y', 'gyro_z']
 data = pd.read_csv('../lab8-dataset/TURNING.csv', header=0, usecols=columns_to_use)
 
-# Plot the accelerometer data (both smoothed and unsmoothed)
-plt.figure(figsize=(12, 6))
-
-# Unsmoothed data
-plt.plot(data['accel_x'], label='accel_x (Unsmoothed)')
-plt.plot(data['accel_y'], label='accel_y (Unsmoothed)')
-plt.plot(data['accel_z'], label='accel_z (Unsmoothed)')
-
-# Smoothed data
-data['smooth_accel_x'] = data['accel_x'].rolling(window=5).mean()
-data['smooth_accel_y'] = data['accel_y'].rolling(window=5).mean()
-data['smooth_accel_z'] = data['accel_z'].rolling(window=5).mean()
-
-plt.plot(data['smooth_accel_x'], label='accel_x (Smoothed)')
-plt.plot(data['smooth_accel_y'], label='accel_y (Smoothed)')
-plt.plot(data['smooth_accel_z'], label='accel_z (Smoothed)')
-
-plt.xlabel('Timestamp')
-plt.ylabel('Acceleration')
-plt.title('Accelerometer Data')
-plt.legend()
-plt.savefig('accelerometer_plot.png')
-plt.show()
-
-# Plot the magnetometer data (both smoothed and unsmoothed)
-plt.figure(figsize=(12, 6))
-
-# Unsmoothed data
-plt.plot(data['mag_x'], label='mag_x (Unsmoothed)')
-plt.plot(data['mag_y'], label='mag_y (Unsmoothed)')
-plt.plot(data['mag_z'], label='mag_z (Unsmoothed)')
-
-# Smoothed data
-data['smooth_mag_x'] = data['mag_x'].rolling(window=5).mean()
-data['smooth_mag_y'] = data['mag_y'].rolling(window=5).mean()
-data['smooth_mag_z'] = data['mag_z'].rolling(window=5).mean()
-
-plt.plot(data['smooth_mag_x'], label='mag_x (Smoothed)')
-plt.plot(data['smooth_mag_y'], label='mag_y (Smoothed)')
-plt.plot(data['smooth_mag_z'], label='mag_z (Smoothed)')
-
-plt.xlabel('Timestamp')
-plt.ylabel('Magnetometer')
-plt.title('Magnetometer Data')
-plt.legend()
-plt.savefig('magnetometer_plot.png')
-plt.show()
+data['timestamp'] = data['timestamp'] * 1e-9
 
 # Plot the gyroscope data (both smoothed and unsmoothed)
 plt.figure(figsize=(12, 6))
@@ -63,9 +17,9 @@ plt.plot(data['gyro_y'], label='gyro_y (Unsmoothed)')
 plt.plot(data['gyro_z'], label='gyro_z (Unsmoothed)')
 
 # Smoothed data
-data['smooth_gyro_x'] = data['gyro_x'].rolling(window=5).mean()
-data['smooth_gyro_y'] = data['gyro_y'].rolling(window=5).mean()
-data['smooth_gyro_z'] = data['gyro_z'].rolling(window=5).mean()
+data['smooth_gyro_x'] = data['gyro_x'].rolling(window=20).mean()
+data['smooth_gyro_y'] = data['gyro_y'].rolling(window=20).mean()
+data['smooth_gyro_z'] = data['gyro_z'].rolling(window=20).mean()
 
 plt.plot(data['smooth_gyro_x'], label='gyro_x (Smoothed)')
 plt.plot(data['smooth_gyro_y'], label='gyro_y (Smoothed)')
@@ -76,36 +30,56 @@ plt.ylabel('Gyroscope')
 plt.title('Gyroscope Data')
 plt.legend()
 plt.savefig('gyroscope_plot.png')
-plt.show()
-# Detect 90-degree turns
-# Calculate thresholds based on quantiles of smoothed data
-quantile_accel = .7 # Adjust these quantile values as needed
-quantile_gyro = .7
-quantile_mag = .73
 
-threshold_accel = data['smooth_accel_x'].quantile(quantile_accel)
-threshold_gyro = data['smooth_gyro_x'].quantile(quantile_gyro)
-threshold_mag = data['smooth_mag_x'].quantile(quantile_mag)
+plt.figure(figsize=(12, 6))
 
-for index in range(len(data) - 2):
-    # Calculate changes in accelerometer data
-    delta_accel_x = data.at[index + 1, 'smooth_accel_x'] - data.at[index, 'smooth_accel_x']
-    delta_accel_y = data.at[index + 1, 'smooth_accel_y'] - data.at[index, 'smooth_accel_y']
-    delta_accel_z = data.at[index + 1, 'smooth_accel_z'] - data.at[index, 'smooth_accel_z']
-    magnitude_accel = np.sqrt(delta_accel_x ** 2 + delta_accel_y ** 2 + delta_accel_z ** 2)
+# Integrate gyroscope readings with respect to time
+data['time_seconds'] = data['timestamp']
+data['integral_smooth_gyro_x'] = np.cumsum(data['smooth_gyro_x'] * (data['time_seconds'].diff().fillna(0)))
+data['integral_smooth_gyro_y'] = np.cumsum(data['smooth_gyro_y'] * (data['time_seconds'].diff().fillna(0)))
+data['integral_smooth_gyro_z'] = np.cumsum(data['smooth_gyro_z'] * (data['time_seconds'].diff().fillna(0)))
 
-    # Calculate changes in gyroscope data
-    delta_gyro_x = data.at[index + 1, 'smooth_gyro_x'] - data.at[index, 'smooth_gyro_x']
-    delta_gyro_y = data.at[index + 1, 'smooth_gyro_y'] - data.at[index, 'smooth_gyro_y']
-    delta_gyro_z = data.at[index + 1, 'smooth_gyro_z'] - data.at[index, 'smooth_gyro_z']
-    magnitude_gyro = np.sqrt(delta_gyro_x ** 2 + delta_gyro_y ** 2 + delta_gyro_z ** 2)
+plt.plot(data['integral_smooth_gyro_x'], label='Integral gyro_x (Smoothed)')
+plt.plot(data['integral_smooth_gyro_y'], label='Integral gyro_y (Smoothed)')
+plt.plot(data['integral_smooth_gyro_z'], label='Integral gyro_z (Smoothed)')
 
-    # Calculate changes in magnetometer data
-    delta_mag_x = data.at[index + 1, 'smooth_mag_x'] - data.at[index, 'smooth_mag_x']
-    delta_mag_y = data.at[index + 1, 'smooth_mag_y'] - data.at[index, 'smooth_mag_y']
-    delta_mag_z = data.at[index + 1, 'smooth_mag_z'] - data.at[index, 'smooth_mag_z']
-    magnitude_mag = np.sqrt(delta_mag_x ** 2 + delta_mag_y ** 2 + delta_mag_z ** 2)
+plt.xlabel('Timestamp')
+plt.ylabel('Integrated Gyroscope')
+plt.title('Integrated Gyroscope Data')
+plt.legend()
+plt.savefig('integrated_gyroscope_plot.png')
 
-    # Check if any of the magnitudes exceed the thresholds
-    if magnitude_accel > threshold_accel and magnitude_gyro > threshold_gyro and magnitude_mag > threshold_mag:
-        print(f"Potential 90-degree turn detected at time {data.at[index, 'timestamp']}")
+threshold_gyro = 1.5
+data['magnitude_integrated_gyro'] = np.sqrt(data['integral_smooth_gyro_x']**2 +
+                                            data['integral_smooth_gyro_y']**2 +
+                                            data['integral_smooth_gyro_z']**2)
+data['magnitude_integrated_gyro'].replace([np.inf, -np.inf, np.nan], 0, inplace=True)
+data['division_result'] = (data['magnitude_integrated_gyro'] // threshold_gyro)
+
+plt.figure(figsize=(12, 6))
+plt.plot(data['integral_smooth_gyro_x'], label='Integral gyro_x (Smoothed)')
+plt.plot(data['integral_smooth_gyro_y'], label='Integral gyro_y (Smoothed)')
+plt.plot(data['integral_smooth_gyro_z'], label='Integral gyro_z (Smoothed)')
+
+# Plot vertical dotted lines at indexes where change is detected
+prev_value = 0
+legend_added = False
+total_turns = 0
+for index, row in data.iterrows():
+    current_value = row['division_result']
+    if current_value != prev_value:
+        total_turns+=1
+        if current_value > prev_value:
+            print(f"A 90 degree turn counterclockwise was made")
+        else:
+            print(f"A 90 degree turn clockwise was made")
+        plt.axvline(x=index, color='r', linestyle='--', label='Change' if not legend_added else '')
+        prev_value = current_value
+        legend_added = True
+
+plt.xlabel('Timestamp')
+plt.ylabel('Integrated Gyroscope')
+plt.title('Integrated Gyroscope Data')
+plt.legend()
+plt.savefig('integrated_gyroscope_plot_with_lines.png')
+print(f"A total of {total_turns} 90 degree turns were made.")
