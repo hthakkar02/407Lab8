@@ -116,7 +116,7 @@ plt.ylabel('Integrated Gyroscope')
 plt.title('Integrated Gyroscope Data')
 plt.legend()
 plt.savefig('integrated_gyroscope_plot_with_lines.png')
-print(f"A total of {total_turns} 90 degree turns were made.")
+print(f"A total of {total_turns} 45 degree turns were made.")
 
 
 def calculate_coordinates(x, y, line_length, line_angle):
